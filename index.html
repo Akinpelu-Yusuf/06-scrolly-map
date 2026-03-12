@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MapLibre Scrollytelling Demo</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    .story-block {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+
+    .story-card {
+      width: 100%;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08);
+    }
+
+    .map-column {
+      position: relative;
+      min-height: 100vh;
+    }
+
+    .map-fixed {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100vh;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-fluid">
+    <div class="row">
+      
+      <!-- Story cards holder-->
+      <div class="col-12 col-lg-5 story-column" id="story">
+
+        <!-- the first story block hard-coded. The others are generated -->
+        <section class="story-block intro-block">
+          <div class="story-card" data-card-type="intro">
+            <h2 class="h4 mb-3 text-center">Places I have visited in the world</h2>
+            <p class="mb-0 text-center">Let me take you on a tour</p>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Map holder -->
+      <div class="col-12 map-column">
+        <div class="map-fixed">
+          <div id="map"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const locations = [
+        {
+            title: "Lagos, Nigeria",
+            lat: 6.524379,
+            lon: 3.379206,
+            zoom: 10,
+            description: "I have lived most of life here. It is where I found God. It is my maternal anscetral homeland."
+        },
+
+        {
+            title: "Ibadan, Nigeria",
+            lat: 7.376736,
+            lon: 3.939786,
+            zoom: 10,
+            description: "This city shaped my adulthood life, and it was there I found purpose. It is my paternal anscetral homeland."
+        },
+
+         {
+            title: "Monrovia, Liberia",
+            lat: 6.300774,
+            lon: 10.797160,
+            zoom: 10,
+            description: "I went here before the 2024 presidential elections to interview then-candidate Joseph Boakai and the current president."
+        },
+
+        {
+            title: "Lome, Togo",
+            lat: 6.136629,
+            lon: 1.222186,
+            zoom: 10,
+            description: "I took a road trip from Lagos, through Benin, to Togo for a weekend getaway."
+        },
+
+        {
+            title: "Marrakech, Morocco",
+            lat: 31.628674,
+            lon:  -7.992047,
+            zoom: 10,
+            description: "I traveled to cover the Ibrahim Governance Weekend, which was my biggest assignment as a producer at the BBC."
+        },
+
+        {
+            title: "Ouagadougou, Burkina Faso",
+            lat: 12.36566,
+            lon: -1.53388,
+            zoom: 10,
+            description: "My first international travel ever. It was 2022. I was nominated for my first-ever international award."
+        },
+
+        {
+            title: "Banjul, Gambia",
+            lat: 13.45274,
+            lon: -16.57803,
+            zoom: 10,
+            description: "Outside Nigeria, the only other country I traveled to by air, land, and water."
+        },
+
+        {
+            title: "Dakar, Senegal",
+            lat: 14.716677,
+            lon: -17.467686,
+            zoom: 10,
+            description: "I made my first full TV debut here on the BBC. Jërë-jëf!"
+        },
+
+        {
+            title: "Nairobi, Kenya",
+            lat: -1.292066,
+            lon: 36.821945,
+            zoom: 10,
+            description: "I have been here twice: once for the 2023 presidential election and again a year later for training."
+        },
+
+          {
+            title: "Mombasa, Kenya",
+            lat: -4.043740,
+            lon: 39.658871,
+            zoom: 10,
+            description: "Beachside condo along the Indian Ocean beachfront. Life was good."
+          },
+
+        {
+            title: "Cotonou, Benin",
+            lat: 6.354590,
+            lon: 2.403740,
+            zoom: 10,
+            description: "I’ve been here twice: once by air for work, and once by road for vacation."
+        },
+
+        {
+            title: "California, USA",
+            lat: 36.778259,
+            lon: -119.417931,
+            zoom: 10,
+            description: "My first trip outside of Africa was here, where my master’s scholarship program started at UC Berkeley."
+        },
+
+        {
+            title: "Indianapolis, USA",
+            lat: 39.768402 ,
+            lon: -86.158066,
+            zoom: 10,
+            description: "The city deepened my love for data journalism. I <heart> data journalism."
+        },
+
+        {
+            title: "Wisconsin, USA",
+            lat: 43.784439,
+            lon: -88.787865,
+            zoom: 10,
+            description: "The coldest city I have ever been to."
+        }
+
+
+
+    ]; //YOU NEED TO EDIT THIS LINE FOR THE MAP TO WORK
+
+
+    //Check out other basemap options here: https://madewithmaplibre.com/basemaps/gallery
+    const map = new maplibregl.Map({
+      container: "map",
+      style: "https://tiles.openfreemap.org/styles/bright",
+      center: [9.0579, 39.8283],
+      zoom: 10
+    });
+
+    //disable all interactions with the map
+    map.scrollZoom.disable();
+    map.dragPan.disable();
+    map.dragRotate.disable();
+    map.touchZoomRotate.disable();
+    map.doubleClickZoom.disable();
+    map.keyboard.disable();
+
+    // Add markers
+    locations.forEach(location => {
+      new maplibregl.Marker()
+        .setLngLat([location.lon, location.lat])
+        .addTo(map);
+    });
+
+    // Build bounds for opening overview
+    const openingBounds = new maplibregl.LngLatBounds();
+    locations.forEach(location => {
+      openingBounds.extend([location.lon, location.lat]);
+    });
+
+    const storyContainer = document.querySelector("#story");
+
+    locations.forEach((location, index) => {
+      const block = document.createElement("section");
+      block.className = "story-block";
+
+      block.innerHTML = `
+        <div class="story-card" data-card-type="location" data-location-index="${index}">
+          <h2 class="h4 mb-3">${location.title}</h2>
+          <p class="mb-0">${location.description}</p>
+        </div>
+      `;
+
+      storyContainer.appendChild(block);
+    });
+
+    const introCard = document.querySelector('.story-card[data-card-type="intro"]');
+    const allCards = document.querySelectorAll("#story .story-card");
+
+    let activeState = null;
+
+    function showOpeningOverview(animated = true) {
+      if (activeState === "intro") return;
+      activeState = "intro";
+
+      map.fitBounds(openingBounds, {
+        padding: { top: 80, right: 80, bottom: 80, left: 80 },
+        maxZoom: 5,
+        duration: animated ? 1200 : 0
+      });
+    }
+
+    function activateLocation(locationIndex) {
+      if (activeState === locationIndex) return;
+
+      const location = locations[locationIndex];
+      if (!location) return;
+
+      activeState = locationIndex;
+
+      map.flyTo({
+        center: [location.lon, location.lat],
+        zoom: location.zoom,
+        speed: 0.9,
+        curve: 1.2,
+        essential: true
+      });
+    }
+
+    function getClosestCardToViewportMiddle() {
+      const viewportMid = window.innerHeight / 2;
+      let closestCard = null;
+      let closestDistance = Infinity;
+
+      allCards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.top + (rect.height / 2);
+        const distance = Math.abs(cardCenter - viewportMid);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestCard = card;
+        }
+      });
+
+      return closestCard;
+    }
+
+    function updateMapFromScroll() {
+      const closestCard = getClosestCardToViewportMiddle();
+      if (!closestCard) return;
+
+      const cardType = closestCard.dataset.cardType;
+
+      if (cardType === "intro") {
+        showOpeningOverview();
+        return;
+      }
+
+      if (cardType === "location") {
+        const locationIndex = Number(closestCard.dataset.locationIndex);
+        activateLocation(locationIndex);
+      }
+    }
+
+  
+    const observer = new IntersectionObserver(
+      entries => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            updateMapFromScroll();
+            break;
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: "-45% 0px -45% 0px",
+        threshold: 0
+      }
+    );
+
+    allCards.forEach(card => observer.observe(card));
+
+    window.addEventListener("scroll", updateMapFromScroll, { passive: true });
+    window.addEventListener("resize", updateMapFromScroll);
+
+    map.on("load", () => {
+      showOpeningOverview(false);
+    });
+  </script>
+</body>
+</html>
